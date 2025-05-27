@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/beganov/test_bot/internal/service/product"
@@ -10,6 +12,10 @@ import (
 type Commander struct {
 	bot             *tgbotapi.BotAPI
 	productServices *product.Service
+}
+
+type CommandData struct {
+	Offset int `json:"offset"`
 }
 
 func NewCommander(bot *tgbotapi.BotAPI, productServices *product.Service) *Commander {
@@ -26,6 +32,13 @@ func (commander *Commander) HandlerUpdate(update tgbotapi.Update) {
 		}
 	}()
 
+	if update.CallbackQuery != nil {
+		parsedData := CommandData{}
+		json.Unmarshal([]byte(update.CallbackQuery.Data), &parsedData)
+		mesg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Parsed: %+v\n", parsedData.Offset))
+		commander.bot.Send(mesg)
+		return
+	}
 	if update.Message != nil { // If we got a message
 
 		switch update.Message.Command() {
